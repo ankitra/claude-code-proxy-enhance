@@ -19,11 +19,12 @@
         .notification { padding: 10px; margin-top: 15px; border-radius: 4px; display: none; }
         .notification.success { background-color: #d4edda; color: #155724; }
         .notification.error { background-color: #f8d7da; color: #721c24; }
+        .hidden { display: none; }
     </style>
 </head>
 <body>
     <div class="container">
-        <h1>OpenAI to Claude Proxy Configuration</h1>
+        <h1>Claude Code Proxy Configuration</h1>
         <!-- Profile Management -->
         <h2>Manage Profiles</h2>
         <span style="margin-left: auto; font-weight: bold; color: #28a745;">Active Profile: {{ config_manager.get_active_profile_name() }}</span>
@@ -47,21 +48,30 @@
             
             <h3>API & Models</h3>
             <div class="form-grid">
-                <label for="OPENAI_API_KEY">OpenAI API Key:</label>
-                <input id="OPENAI_API_KEY" name="OPENAI_API_KEY" value="{{ config.openai_api_key or '' }}">
-                
-                <label for="ANTHROPIC_API_KEY">Client API Key (Optional):</label>
-                <input id="ANTHROPIC_API_KEY" name="ANTHROPIC_API_KEY" value="{{ config.anthropic_api_key or '' }}">
+                <label for="PROVIDER">API Type:</label>
+                <select id="PROVIDER" name="PROVIDER" onchange="onProviderChange()">
+                    <option value="openai" {% if config.provider == 'openai' %}selected{% endif %}>Open AI</option>
+                    <option value="anthropic" {% if config.provider == 'anthropic' %}selected{% endif %}>Anthropic</option>
+                </select>
 
-                <label for="OPENAI_BASE_URL">OpenAI Base URL:</label>
-                <input type="text" id="OPENAI_BASE_URL" name="OPENAI_BASE_URL" value="{{ config.openai_base_url }}">
+                <label for="PROVIDER_API_KEY">Provider API Key:</label>
+                <input id="PROVIDER_API_KEY" name="PROVIDER_API_KEY" value="{{ config.provider_api_key or '' }}">
+
+                <label for="CLIENT_API_KEY">Client API Key (Optional):</label>
+                <input id="CLIENT_API_KEY" name="CLIENT_API_KEY" value="{{ config.client_api_key or '' }}">
+
+                <label for="PROVIDER_BASE_URL" class="base-url-label openai-url">Base URL (OpenAI):</label>
+                <input type="text" id="PROVIDER_BASE_URL" name="PROVIDER_BASE_URL" class="base-url-input openai-url" value="{{ config.provider_base_url }}">
+
+                <label for="ANTHROPIC_BASE_URL" class="base-url-label anthropic-url">Base URL (Anthropic):</label>
+                <input type="text" id="ANTHROPIC_BASE_URL" name="ANTHROPIC_BASE_URL" class="base-url-input anthropic-url" value="{{ config.anthropic_base_url }}">
 
                 <label for="BIG_MODEL">Big Model (Opus):</label>
                 <input type="text" id="BIG_MODEL" name="BIG_MODEL" value="{{ config.big_model }}">
 
-                <label for="MIDDLE_MODEL">Middle Model:</label>
+                <label for="MIDDLE_MODEL">Middle Model (Sonnet):</label>
                 <input type="text" id="MIDDLE_MODEL" name="MIDDLE_MODEL" value="{{ config.middle_model }}">
-                
+
                 <label for="SMALL_MODEL">Small Model (Haiku):</label>
                 <input type="text" id="SMALL_MODEL" name="SMALL_MODEL" value="{{ config.small_model }}">
             </div>
@@ -91,6 +101,13 @@
     </div>
 
     <script>
+        function onProviderChange() {
+            const provider = document.getElementById('PROVIDER').value;
+            const isAnthropic = provider === 'anthropic';
+            document.querySelectorAll('.base-url-label.openai-url, .base-url-input.openai-url').forEach(el => el.classList.toggle('hidden', isAnthropic));
+            document.querySelectorAll('.base-url-label.anthropic-url, .base-url-input.anthropic-url').forEach(el => el.classList.toggle('hidden', !isAnthropic));
+        }
+
         function showNotification(message, isError = false) {
             const notification = document.getElementById('notification');
             notification.textContent = message;
@@ -235,6 +252,7 @@
             if (response.ok) {
                 const data = await response.json();
                 updateFormWithData(profileName, data);
+                onProviderChange();
             } else {
                 showNotification(`Error loading profile data for '${profileName}'.`, true);
             }
@@ -250,6 +268,7 @@
         document.addEventListener('DOMContentLoaded', () => {
             const initialProfile = document.getElementById('profile-selector').value;
             loadProfileForEdit(initialProfile);
+            onProviderChange();
         });
 
         async function testConnection() {

@@ -258,7 +258,7 @@ async def main():
         
     except Exception as e:
         print(f"\n❌ Test failed: {e}")
-        print("Make sure the server is running with a valid OPENAI_API_KEY")
+        print("Make sure the server is running with a valid PROVIDER_API_KEY")
 
 
 if __name__ == "__main__":

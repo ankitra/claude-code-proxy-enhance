@@ -20,12 +20,16 @@ def print_startup_message():
     """Prints a summary of the initial configuration on startup."""
     print("🚀 Claude-to-OpenAI API Proxy v1.1.0")
     print(f"✅ Configuration profile '{config_manager.get_active_profile_name()}' loaded.")
-    print(f"   OpenAI Base URL: {config.openai_base_url}")
+    print(f"   Provider: {config.provider}")
+    if config.provider == "anthropic":
+        print(f"   Anthropic Base URL: {config.anthropic_base_url}")
+    else:
+        print(f"   OpenAI Base URL: {config.provider_base_url}")
     print(f"   Big Model (opus): {config.big_model}")
     print(f"   Small Model (haiku): {config.small_model}")
     print(f"   Server running at: http://{config.host}:{config.port}")
     print(f"   Configuration UI: http://{config.host}:{config.port}/")
-    print(f"   Client API Key Validation: {'Enabled' if config.anthropic_api_key else 'Disabled'}")
+    print(f"   Client API Key Validation: {'Enabled' if config.client_api_key else 'Disabled'}")
     print("")
 
 

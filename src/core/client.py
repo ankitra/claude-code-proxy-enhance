@@ -147,7 +147,7 @@ class OpenAIClient:
         
         # API key issues
         if "invalid_api_key" in error_str or "unauthorized" in error_str:
-            return "Invalid API key. Please check your OPENAI_API_KEY configuration."
+            return "Invalid API key. Please check your PROVIDER_API_KEY configuration."
         
         # Rate limiting
         if "rate_limit" in error_str or "quota" in error_str:

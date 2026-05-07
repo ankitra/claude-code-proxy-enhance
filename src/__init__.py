@@ -1,6 +1,7 @@
 """Claude Code Proxy
 
-A proxy server that enables Claude Code to work with OpenAI-compatible API providers.
+A proxy server that enables Claude Code to work with OpenAI-compatible
+or Anthropic-compatible API providers.
 """
 
 from dotenv import load_dotenv

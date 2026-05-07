@@ -9,11 +9,22 @@ class Config:
         self.host: str = os.environ.get("HOST", "0.0.0.0")
         self.port: int = int(os.environ.get("PORT", 8082))
         self.log_level: str = os.environ.get("LOG_LEVEL", "INFO")
-        
-        # Load dynamic settings from environment as the base layer
-        self.openai_api_key = os.environ.get("OPENAI_API_KEY")
-        self.anthropic_api_key = os.environ.get("ANTHROPIC_API_KEY")
-        self.openai_base_url = os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+
+        # Provider selection: "openai" or "anthropic"
+        self.provider = os.environ.get("PROVIDER", "openai")
+
+        # Provider API key (sent to backend) — backward compat with OPENAI_API_KEY
+        self.provider_api_key = os.environ.get("PROVIDER_API_KEY") or os.environ.get("OPENAI_API_KEY")
+
+        # Optional client API key (for incoming request validation) — backward compat with ANTHROPIC_API_KEY
+        self.client_api_key = os.environ.get("CLIENT_API_KEY") or os.environ.get("ANTHROPIC_API_KEY")
+
+        # Provider base URL (for OpenAI-compatible backends) — backward compat with OPENAI_BASE_URL
+        self.provider_base_url = os.environ.get("PROVIDER_BASE_URL") or os.environ.get("OPENAI_BASE_URL", "https://api.openai.com/v1")
+
+        # Anthropic-compatible backend base URL
+        self.anthropic_base_url = os.environ.get("ANTHROPIC_BASE_URL", "https://api.anthropic.com/v1")
+
         self.azure_api_version = os.environ.get("AZURE_API_VERSION")
         self.big_model = os.environ.get("BIG_MODEL", "gpt-4o")
         self.middle_model = os.environ.get("MIDDLE_MODEL", self.big_model)
@@ -27,10 +38,24 @@ class Config:
         """
         Updates the configuration from a dictionary (a profile).
         It only updates if a key is present in the dictionary.
+        Supports new and legacy key names for backward compatibility.
         """
-        if "OPENAI_API_KEY" in data: self.openai_api_key = data["OPENAI_API_KEY"]
-        if "ANTHROPIC_API_KEY" in data: self.anthropic_api_key = data["ANTHROPIC_API_KEY"]
-        if "OPENAI_BASE_URL" in data: self.openai_base_url = data["OPENAI_BASE_URL"]
+        # Provider — new key only
+        if "PROVIDER" in data: self.provider = data["PROVIDER"]
+
+        # Provider API key (new name preferred; fallback to old name)
+        if "PROVIDER_API_KEY" in data: self.provider_api_key = data["PROVIDER_API_KEY"]
+        elif "OPENAI_API_KEY" in data: self.provider_api_key = data["OPENAI_API_KEY"]
+
+        # Client API key (new name preferred; fallback to old name)
+        if "CLIENT_API_KEY" in data: self.client_api_key = data["CLIENT_API_KEY"]
+        elif "ANTHROPIC_API_KEY" in data: self.client_api_key = data["ANTHROPIC_API_KEY"]
+
+        # Provider base URL (new name preferred; fallback to old name)
+        if "PROVIDER_BASE_URL" in data: self.provider_base_url = data["PROVIDER_BASE_URL"]
+        elif "OPENAI_BASE_URL" in data: self.provider_base_url = data["OPENAI_BASE_URL"]
+
+        if "ANTHROPIC_BASE_URL" in data: self.anthropic_base_url = data["ANTHROPIC_BASE_URL"]
         if "AZURE_API_VERSION" in data: self.azure_api_version = data["AZURE_API_VERSION"]
         if "BIG_MODEL" in data: self.big_model = data["BIG_MODEL"]
         if "MIDDLE_MODEL" in data: self.middle_model = data.get("BIG_MODEL") # Fallback
@@ -43,9 +68,11 @@ class Config:
     def to_dict(self) -> Dict[str, Any]:
         """Serializes the dynamic parts of the config to a dictionary."""
         return {
-            "OPENAI_API_KEY": self.openai_api_key,
-            "ANTHROPIC_API_KEY": self.anthropic_api_key,
-            "OPENAI_BASE_URL": self.openai_base_url,
+            "PROVIDER": self.provider,
+            "PROVIDER_API_KEY": self.provider_api_key,
+            "CLIENT_API_KEY": self.client_api_key,
+            "PROVIDER_BASE_URL": self.provider_base_url,
+            "ANTHROPIC_BASE_URL": self.anthropic_base_url,
             "AZURE_API_VERSION": self.azure_api_version,
             "BIG_MODEL": self.big_model,
             "MIDDLE_MODEL": self.middle_model,
@@ -57,10 +84,10 @@ class Config:
         }
 
     def validate_client_api_key(self, client_api_key: str) -> bool:
-        """Validate client's Anthropic API key."""
-        if not self.anthropic_api_key:
+        """Validate client API key for incoming request authentication."""
+        if not self.client_api_key:
             return True
-        return client_api_key == self.anthropic_api_key
+        return client_api_key == self.client_api_key
 
 
 class ConfigManager:
