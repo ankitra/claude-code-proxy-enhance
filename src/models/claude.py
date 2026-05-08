@@ -43,8 +43,8 @@ class ClaudeTool(BaseModel):
     input_schema: Dict[str, Any]
 
 class ClaudeThinkingConfig(BaseModel):
-    type: Literal["enabled"] = "enabled"
-    budget_tokens: int
+    type: Literal["enabled", "adaptive"] = "enabled"
+    budget_tokens: Optional[int] = None
 
 class ClaudeMessagesRequest(BaseModel):
     model: str
