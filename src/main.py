@@ -1,13 +1,29 @@
+import json
 from dotenv import load_dotenv
 load_dotenv()
 
-from fastapi import FastAPI
+from fastapi import FastAPI, Request
+from fastapi.exceptions import RequestValidationError
+from starlette.responses import JSONResponse
 from src.api.endpoints import router as api_router
 from src.web.routes import router as web_router
 import uvicorn
 from src.core.config import config, config_manager
+from src.core.logging import logger
 
 app = FastAPI(title="Claude-to-OpenAI API Proxy", version="1.1.0")
+
+
+@app.exception_handler(RequestValidationError)
+async def validation_exception_handler(request: Request, exc: RequestValidationError):
+    """Log Pydantic validation errors so we can see what fields are failing."""
+    logger.error(f"Validation error for {request.method} {request.url}")
+    logger.error(f"Errors: {json.dumps(exc.errors(), indent=2)}")
+    logger.error(f"Request body: {exc.body}")
+    return JSONResponse(
+        status_code=422,
+        content={"detail": exc.errors(), "body": exc.body},
+    )
 
 # API Router
 app.include_router(api_router)
